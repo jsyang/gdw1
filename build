@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Clean and build a test build.
+
+nme clean flash
+nme test GDW1.nmml flash
