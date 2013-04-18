@@ -1,5 +1,5 @@
-GameDev Weekend 1
-=================
+GameDev Weekend 1 - April 19-21, 2013
+=====================================
 
 Game theme is THROWING THINGS.   
 
@@ -10,7 +10,7 @@ Members :
 
 Using :
 - Haxe
-- Flash VM
+- NME
 
 Targeting :
-- browsers and other Flash Player environments
+- Flash VM environments
