@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Clean and build a test build.
+
+nme clean flash
+nme test GDW1.nmml flash
+rm -f /Library/WebServer/Documents/GDW1.swf
+cp /Users/jimgur/gdw1/Export/flash/bin/GDW1.swf /Library/WebServer/Documents/

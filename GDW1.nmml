@@ -2,13 +2,15 @@
 <project>
     <app title="Throwing Things" file="GDW1" main="GDW1" package="" version="0.0.0" company="GDW1" />
      
-    <window width="800" height="600" fps="40" orientation="landscape" resizable="false" />
+    <window width="600" height="400" fps="60" orientation="landscape" resizable="false" />
      
     <set name="BUILD_DIR" value="Export" />
      
     <classpath name="Source" />
      
     <haxelib name="nme" />
+    <haxelib name="physaxe" />
+    <haxedef name="fdb" if="flash" />
      
     <assets path="Assets/images" rename="images" include="*"/>
  
