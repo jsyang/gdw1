@@ -10,7 +10,7 @@
      
     <haxelib name="nme" />
      
-    <!--<assets path="Assets/images" rename="images" include="*" exclude="Icon*.png" />-->
+    <assets path="Assets/images" rename="images" include="*"/>
  
     <icon path="Assets/nme.svg" />
  
