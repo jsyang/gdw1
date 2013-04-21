@@ -13,3 +13,11 @@ function removeEvent( obj, type, fn ) {
   } else
     obj.removeEventListener( type, fn, false );
 }
+
+function log() {
+  var logstring = '';
+  for(var i=0; i<arguments.length; i++) {
+    logstring += arguments[i];
+  }
+  document.title = logstring;
+}
