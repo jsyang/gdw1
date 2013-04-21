@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# Clean and build a test build.
-
-nme clean html5
-nme test GDW1.nmml html5
-rm -rf /Library/WebServer/Documents/bin
-cp -r /Users/jimgur/gdw1/Export/html5/bin /Library/WebServer/Documents/
