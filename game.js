@@ -31,6 +31,9 @@ var GDW1 = Class.extend({
     this.ctx.h      = this.canvasEl.height;
     this.ctx.clear  = function(){ this.clearRect(0,0,this.w,this.h);};
 
+    this.ctx.font         = '18pt verdana';
+    this.ctx.textBaseline = 'top';
+
     this.initEntities();
     this.initTouchEvents();
     this.initXYHash();

@@ -25,6 +25,8 @@ function log() {
 var TouchEvents = {
   throwEntitiesAround : {
 
+    last_location : [0,0],
+
     touchSelected : null,
 
     touchstart : function(e) {
@@ -41,7 +43,6 @@ var TouchEvents = {
         nearest.forEach(function(v){
           if(v.hit(userFinger)) {
             TouchEvents.throwEntitiesAround.touchSelected = v;
-            return;
           }
         });
       }
@@ -52,17 +53,22 @@ var TouchEvents = {
       e.preventDefault();
 
       var ts = TouchEvents.throwEntitiesAround.touchSelected;
-
+      var last = TouchEvents.throwEntitiesAround.last_location;
       if(!!ts && e.changedTouches.length) {
         var te = e.changedTouches[0];
         var userFinger = {
           x : te.pageX,
           y : te.pageY
         };
-
-        ts.dx = cap(userFinger.x - ts.x, 30);
-        ts.dy = cap(userFinger.y - ts.y, 30);
+		//var diff = [userFinger.x - last[0], userFinger.y - last[1]];
+		var diff = [userFinger.x - ts.x, userFinger.y - ts.y];
+        ts.dx = (diff[0] > 30) ? (8*Math.sqrt(Math.abs(diff[0]) - 30) * (diff[0] > 0 ? 1 : -1))-14: diff[0];
+        ts.dy = (diff[1] > 30) ? (8*Math.sqrt(Math.abs(diff[1]) - 30) * (diff[1] > 0 ? 1 : -1))-14: diff[1];
+		ts.dx = ts.dx/6;
+		ts.dy = ts.dy/6;
       }
+	  last[0] = userFinger.x;
+	  last[1] = userFinger.y;
     },
 
     touchend : function(e) { TouchEvents.throwEntitiesAround.touchSelected = null; }
