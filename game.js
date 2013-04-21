@@ -1,5 +1,6 @@
 var $ = {
-  r : function(min,max) { return min + Math.random()*(max-min); }
+  r : function(min,max) { return min + Math.random()*(max-min); },
+  R : function(min,max) { return (min + Math.random()*(max-min))>>0; }
 };
 
 var GDW1 = Class.extend({
@@ -13,6 +14,9 @@ var GDW1 = Class.extend({
   xyhash : null,
 
   classes : {},
+
+  enemySpawnRate      : 120,
+  cyclesTillNextSpawn : 120,
 
   init : function() {
 
@@ -46,7 +50,7 @@ var GDW1 = Class.extend({
     this.player = new Player({ x : this.w>>1, y : this.h>>1, dx : 0, dy : 0 });
     var startingEntities = [
       this.player,
-      //new Enemy1({ x : 120, y : 80, dx : -13.2, dy : 12.3 }),
+
       new Enemy1({ x : $.r(0,this.w), y : $.r(0,this.h), dx : $.r(-20,20), dy : $.r(-20,20) }),
       new Enemy1({ x : $.r(0,this.w), y : $.r(0,this.h), dx : $.r(-20,20), dy : $.r(-20,20) }),
       new Enemy1({ x : $.r(0,this.w), y : $.r(0,this.h), dx : $.r(-20,20), dy : $.r(-20,20) }),
@@ -61,7 +65,7 @@ var GDW1 = Class.extend({
   },
 
   initTouchEvents : function() {
-    var touchEventSet = 'throwEntitiesAround';
+    var touchEventSet = 'throwWrenchesAround';
 
     addEvent(this.canvasEl, 'touchstart', TouchEvents[touchEventSet].touchstart);
     addEvent(this.canvasEl, 'touchmove',  TouchEvents[touchEventSet].touchmove);
@@ -73,6 +77,45 @@ var GDW1 = Class.extend({
   loop : function() {
     this.ctx.clear();
     this.gameCycle();
+    this.addNewEnemies();
+  },
+
+  addNewEnemies : function() {
+    if(this.cyclesTillNextSpawn > 0) {
+      this.cyclesTillNextSpawn--;
+
+    } else {
+      var properties = {
+        dx : 0,
+        dy : 0
+      };
+      var edge    = $.R(1,4);
+      var margin  = 12;
+
+      switch(edge) {
+        case 1 :  // North
+          properties.y = margin;
+          properties.x = $.r(margin,this.w-margin);
+          break;
+        case 2 :  // East
+          properties.y = $.r(margin,this.h-margin);
+          properties.x = margin;
+          break;
+        case 3 :  // South
+          properties.y = this.h-margin;
+          properties.x = $.r(margin,this.w-margin);
+          break;
+        case 4 :  // West
+          properties.y = $.r(margin,this.h-margin);
+          properties.x = this.w-margin;
+          break;
+      }
+      
+
+      this.entities.push(new Enemy1(properties));
+      this.cyclesTillNextSpawn = this.enemySpawnRate;
+    }
+    
   },
 
   gameCycle : function() {
@@ -83,10 +126,15 @@ var GDW1 = Class.extend({
       var e = this.entities[i];
       
       // hit other entities
-      var nearest = this.xyhash.near(e);
-      nearest.forEach(function(v){
+      // ~ http://stackoverflow.com/questions/345838/ball-to-ball-collision-detection-and-handling
+      var nearest = this.xyhash.near(e).slice();
+      for(var j=nearest.length; j-->0;) {
+        var v=nearest[j];
         // Make sure we've hit the thing already
         if(v!==e && e.hit(v)) {
+          // Don't try and hit anything further if we're supposed to be removed
+          if(e.remove===true) break;
+
           var collideX = e.x - v.x;
           var collideY = e.y - v.y;
 
@@ -131,11 +179,11 @@ var GDW1 = Class.extend({
           var vn    = dot(vdiff,collisionVectorNormd);
 
           // sphere intersecting but moving away already
-          if(vn>0) return;
+          if(vn>0) break;
 
           // collision impulse
-          var i = 0.5 * (vn * -1.8)
-          var impulse = [collisionVectorNormd[0]*i, collisionVectorNormd[1]*i];
+          var ci = 0.5 * (vn * -1.8)
+          var impulse = [collisionVectorNormd[0]*ci, collisionVectorNormd[1]*ci];
 
           e.dx += impulse[0];
           e.dy += impulse[1];
@@ -145,7 +193,7 @@ var GDW1 = Class.extend({
           v.dy -= impulse[1];
           v.decaySpeed();
         }
-      });
+      }
 
       // process entity actions
       e.alive();
@@ -166,7 +214,7 @@ var GDW1 = Class.extend({
     // Add them back into the new XYHash
     this.initXYHash();
     newEntities.forEach(function(v){
-      self.xyhash.add(v);
+      if(v.canBeHit) self.xyhash.add(v);
     });
     this.entities = newEntities;
   }
@@ -176,7 +224,7 @@ var GDW1 = Class.extend({
 
 var preloader = new html5Preloader();
 (function(){
-  var images = 'player,enemy1';
+  var images = 'player,enemy1,enemy1hurt,wrench';
   images.split(',').forEach(function(v){
     preloader.addFiles(v+'*:images/'+v+'.png');
   });
