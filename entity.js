@@ -16,7 +16,7 @@ var Entity = Class.extend({
       y     : this.y
     };
   },
-
+ 
   hit : function(entity) {
     var dx = Math.abs(this.x - entity.x);
     var dy = Math.abs(this.y - entity.y);
@@ -43,8 +43,15 @@ var Player = Entity.extend({
         this.dy *= -1;
       } else
         this.y=newy;
-    
+      
+      this.decaySpeed();
     }
+  },
+
+  decaySpeed : function() {
+    var decayRate = 0.91;
+    this.dy *= decayRate;
+    this.dx *= decayRate;
   }
 
 });
