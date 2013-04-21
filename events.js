@@ -23,8 +23,6 @@ function log() {
 }
 
 var TouchEvents = {
-
-	
   throwEntitiesAround : {
 
     last_location : [0,0],
@@ -78,6 +76,52 @@ var TouchEvents = {
 
   throwWrenchesAround : {
 
+    touchlength    : null,
+    lastTouchPoint : null,
+
+    touchstart : function(e) {
+      var te = e.changedTouches;
+      if(te.length>0) {
+        te = te[0];
+        TouchEvents.throwWrenchesAround.lastTouchPoint = {
+          x : te.pageX,
+          y : te.pageY
+        };  
+        TouchEvents.throwWrenchesAround.touchlength = 0;
+      }
+    },
+
+    touchmove : function(e) {
+      // no iOS web bounce!
+      e.preventDefault();
+
+      var tl = TouchEvents.throwWrenchesAround.touchlength;
+      if(tl!=null && tl<1 && e.changedTouches.length) {
+        var tp = TouchEvents.throwWrenchesAround.lastTouchPoint;
+        var te = e.changedTouches[0];
+        var userFinger = {
+          x : te.pageX,
+          y : te.pageY
+        };
+
+        var dx = cap(userFinger.x - tp.x, 30);
+        var dy = cap(userFinger.y - tp.y, 30);
+
+        game.entities.push(new Wrench({
+          x : game.player.x,
+          y : game.player.y,
+          dx : dx,
+          dy : dy
+        }));
+
+        game.player.dx -= cap(dx*0.6,2.3);
+        game.player.dy -= cap(dy*0.6,2.3);
+
+        TouchEvents.throwWrenchesAround.touchlength++;
+      }
+    },
+
+    touchend : function(e) { TouchEvents.throwWrenchesAround.touchlength = null; }
   }
 
 };

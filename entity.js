@@ -16,7 +16,7 @@ var Entity = Class.extend({
       y     : this.y
     };
   },
- 
+
   aliveList : [],
   alive : function() {
     for(var i=0; i<this.aliveList.length; i++) {
@@ -66,20 +66,33 @@ var Player = Entity.extend({
       this.decaySpeed
     ];
   },
-  w : 64,
-  h : 64,
-  r2 : 2048,
-  r : 32
+  w         : 64,
+  h         : 64,
+  r2        : 2048,
+  r         : 32,
+  canBeHit  : true
 });
 
 var Enemy1 = Entity.extend({
   initCb : function() { 
     this.img = preloader.getFile('enemy1'); 
+    this.img_hurt = preloader.getFile('enemy1hurt'); 
     this.aliveList = [
       this.chasePlayer,
       this.moveAndBounce,
-      this.decaySpeed
+      this.decaySpeed,
+      this.removeIfDead
     ];
+  },
+
+  gfx : function() {
+    return {
+      w     : this.w,
+      h     : this.h,
+      img   : this.beingHurt>0? this.img_hurt:this.img,
+      x     : this.x,
+      y     : this.y
+    };
   },
 
   chasePlayer : function() {
@@ -89,24 +102,74 @@ var Enemy1 = Entity.extend({
     var vdiff = [game.player.x - this.x, game.player.y - this.y];
     var vn    = norm(vdiff);
 
-	this.dx += vn[0]*this.speed;
-	this.dy += vn[1]*this.speed;
+    this.dx += vn[0]*this.speed;
+	   this.dy += vn[1]*this.speed;
 	
     //this.dx += game.player.x>this.x? this.speed : -this.speed;
     //this.dy += game.player.y>this.y? this.speed : -this.speed;
   },
 
+  removeIfDead : function() {
+    if(this.health<=0) this.remove = true;
+    if(this.beingHurt>0) this.beingHurt--; 
+  },
+
+  takeDamage : function(damage) {
+    this.health -= damage;
+    this.decaySpeed();
+    this.decaySpeed();
+    this.beingHurt += damage;
+  },
+
+  health    : 30,
+
+  beingHurt : 0,
+
   speed     : 0.3,
+
   w         : 64,
   h         : 64,
   r         : 32,
-  r2        : 2048
+  r2        : 2048,
+  canBeHit  : true
 });
 
 var Wrench = Entity.extend({
-  initCb : function() { this.img = preloader.getFile('wrench'); },
-  w : 16,
-  h : 16,
-  r : 8,
-  r2 : 128
+  initCb    : function() { 
+    this.img = preloader.getFile('wrench'); 
+    this.aliveList = [
+      this.moveAndBounce,
+      this.decaySpeed,
+      this.decayLifeSpan
+    ];
+  },
+
+  decayLifeSpan : function() {
+    if(this.lifespan>0) {
+      this.lifespan--;
+    } else {
+      this.remove = true;
+    }
+  },
+  
+  hit : function(entity) {
+    if(entity!==game.player && entity.takeDamage) {
+      if(this.dist(entity)<=entity.r2+this.r2) {
+        entity.takeDamage(1);
+        this.remove = true;
+      }
+    }
+  },
+
+  lifespan      : 80,  // in cycles
+
+  w             : 16,
+  h             : 16,
+  r             : 8,
+  r2            : 128,
+  canBeHit      : false
 });
+
+// todo: teleportation device
+// todo: land mine
+// todo: anvil
