@@ -17,20 +17,14 @@ var Entity = Class.extend({
     };
   },
  
-  hit : function(entity) {
-    var dx = Math.abs(this.x - entity.x);
-    var dy = Math.abs(this.y - entity.y);
-    return dx*dx+dy*dy < this.r2+entity.r2;
-  }
-});
-
-var Player = Entity.extend({
-  initCb : function() { this.img = preloader.getFile('player'); },
-  w : 64,
-  h : 64,
-  r2 : 2048,
-
+  aliveList : [],
   alive : function() {
+    for(var i=0; i<this.aliveList.length; i++) {
+      this.aliveList[i].call(this);
+    }
+  },
+
+  moveAndBounce : function() {
     if(this.dx!=null && this.dy!=null) {
       var newx = this.x + this.dx;
       var newy = this.y + this.dy;
@@ -43,8 +37,6 @@ var Player = Entity.extend({
         this.dy *= -1;
       } else
         this.y=newy;
-      
-      this.decaySpeed();
     }
   },
 
@@ -52,12 +44,35 @@ var Player = Entity.extend({
     var decayRate = 0.91;
     this.dy *= decayRate;
     this.dx *= decayRate;
-  }
+  },
 
+  hit : function(entity) {
+    var dx = Math.abs(this.x - entity.x);
+    var dy = Math.abs(this.y - entity.y);
+    return dx*dx+dy*dy < this.r2+entity.r2;
+  }
+});
+
+var Player = Entity.extend({
+  initCb : function() { 
+    this.img = preloader.getFile('player'); 
+    this.aliveList = [
+      this.moveAndBounce,
+      this.decaySpeed
+    ];
+  },
+  w : 64,
+  h : 64,
+  r2 : 2048
 });
 
 var Enemy1 = Entity.extend({
-  initCb : function() { this.img = preloader.getFile('enemy1'); },
+  initCb : function() { 
+    this.img = preloader.getFile('enemy1'); 
+    this.aliveList = [
+      this.moveAndBounce
+    ];
+  },
   w : 64,
   h : 64,
   r2 : 2048

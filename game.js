@@ -28,7 +28,8 @@ var GDW1 = Class.extend({
 
   initEntities : function() {
     var startingEntities = [
-      new Player({ x : 20, y : 20, dx : 13.2, dy : 32.3 })
+      new Player({ x : 20, y : 20, dx : 13.2, dy : 32.3 }),
+      new Enemy1({ x : 120, y : 80, dx : -13.2, dy : 12.3 })
     ];
 
     var self = this;
@@ -54,7 +55,7 @@ var GDW1 = Class.extend({
       document.title = [userFinger.x,userFinger.y,userFinger.r2];
 
       if(this.entities[0].hit(userFinger)) {
-        alert('hit!');
+        this.entities[0].remove = true;
       }
     }
   },
@@ -65,11 +66,13 @@ var GDW1 = Class.extend({
   },
 
   gameCycle : function() {
+    var newEntities = [];
+    
     for(var i=0; i<this.entities.length; i++) {
       var e = this.entities[i];
       
       // process entity actions
-      if(e.alive!=null) e.alive();
+      e.alive();
       
       // draw the damn thing
       var drawInterface = e.gfx();
@@ -78,7 +81,13 @@ var GDW1 = Class.extend({
         drawInterface.x - (drawInterface.w>>1),
         drawInterface.y - (drawInterface.h>>1)
       );
+
+      if(!e.remove) {
+        newEntities.push(e);
+      }
     }
+
+    this.entities = newEntities;
   }
 
 });
