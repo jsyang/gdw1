@@ -83,14 +83,20 @@ var Enemy1 = Entity.extend({
   },
 
   chasePlayer : function() {
-    this.dx *= 0.4;
-    this.dx += game.player.x>this.x? this.speed : -this.speed;
-    
-    this.dy *= 0.4;
-    this.dy += game.player.y>this.y? this.speed : -this.speed;
+    this.dx *= 0.99;
+    this.dy *= 0.99;
+
+    var vdiff = [game.player.x - this.x, game.player.y - this.y];
+    var vn    = norm(vdiff);
+
+	this.dx += vn[0]*this.speed;
+	this.dy += vn[1]*this.speed;
+	
+    //this.dx += game.player.x>this.x? this.speed : -this.speed;
+    //this.dy += game.player.y>this.y? this.speed : -this.speed;
   },
 
-  speed     : 2,
+  speed     : 0.3,
   w         : 64,
   h         : 64,
   r         : 32,
