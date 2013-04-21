@@ -6,13 +6,13 @@ var GDW1 = Class.extend({
   
   preloads : {},
 
+  player : null,
+
   entities : [],
 
   xyhash : null,
 
   classes : {},
-
-  touchSelected : null,
 
   init : function() {
 
@@ -43,8 +43,9 @@ var GDW1 = Class.extend({
   },
 
   initEntities : function() {
+    this.player = new Player({ x : this.w>>1, y : this.h>>1, dx : 0, dy : 0 });
     var startingEntities = [
-      //new Player({ x : 20, y : 20, dx : 13.2, dy : 32.3 }),
+      this.player,
       //new Enemy1({ x : 120, y : 80, dx : -13.2, dy : 12.3 }),
       new Enemy1({ x : $.r(0,this.w), y : $.r(0,this.h), dx : $.r(-20,20), dy : $.r(-20,20) }),
       new Enemy1({ x : $.r(0,this.w), y : $.r(0,this.h), dx : $.r(-20,20), dy : $.r(-20,20) }),
@@ -60,54 +61,13 @@ var GDW1 = Class.extend({
   },
 
   initTouchEvents : function() {
-    var self = this;
-    addEvent(this.canvasEl, 'touchstart', function(e) { self.onTouchStart(e); });
-    addEvent(this.canvasEl, 'touchmove',  function(e) { self.onTouchMove(e); });
-    addEvent(this.canvasEl, 'touchend',   function(e) { self.onTouchEnd(e); });
-    addEvent(this.canvasEl, 'touchleave', function(e) { self.onTouchEnd(e); });
-    addEvent(this.canvasEl, 'touchcancel',function(e) { self.onTouchEnd(e); });
-  },
+    var touchEventSet = 'throwEntitiesAround';
 
-  onTouchStart : function(e) {
-    for(var i=0; i<e.changedTouches.length; i++) {
-      var te = e.changedTouches[i];
-      var userFinger = {
-        x : te.pageX,
-        y : te.pageY,
-        r2 : 288
-      };
-
-      // hit other entities
-      var nearest = this.xyhash.near(userFinger);
-      var self    = this;
-      nearest.forEach(function(v){
-        if(v.hit(userFinger)) {
-          self.touchSelected = v;
-          return;
-        }
-      });
-    }
-  },
-
-  onTouchMove : function(e) {
-    // no bounce!
-    e.preventDefault();
-
-    if(!!this.touchSelected && e.changedTouches.length) {
-      var te = e.changedTouches[0];
-      var userFinger = {
-        x : te.pageX,
-        y : te.pageY
-      };
-
-      this.touchSelected.dx = cap(userFinger.x - this.touchSelected.x,18);
-      this.touchSelected.dy = cap(userFinger.y - this.touchSelected.y,18);
-    }
-  },
-
-  onTouchEnd : function(e) {
-    log('touchend!');
-    this.touchSelected = null;
+    addEvent(this.canvasEl, 'touchstart', TouchEvents[touchEventSet].touchstart);
+    addEvent(this.canvasEl, 'touchmove',  TouchEvents[touchEventSet].touchmove);
+    addEvent(this.canvasEl, 'touchend',   TouchEvents[touchEventSet].touchend);
+    addEvent(this.canvasEl, 'touchleave', TouchEvents[touchEventSet].touchend);
+    addEvent(this.canvasEl, 'touchcancel',TouchEvents[touchEventSet].touchend);
   },
 
   loop : function() {
@@ -143,6 +103,28 @@ var GDW1 = Class.extend({
           v.x -= mtdx*0.5;
           v.y -= mtdy*0.5;
 
+          // Bounds.
+          if(e.x>self.w) {
+            e.x = self.w;
+          } else if(e.x<0){
+            e.x = 0;
+          }
+          if(e.y>self.h) {
+            e.y = self.h;
+          } else if(e.y<0){
+            e.y = 0;
+          }
+          if(v.x>self.w) {
+            v.x = self.w;
+          } else if(v.x<0){
+            v.x = 0;
+          }
+          if(v.y>self.h) {
+            v.y = self.h;
+          } else if(v.y<0){
+            v.y = 0;
+          }
+
           var collisionVectorNormd = norm([collideX,collideY]);
           // impact speed
           var vdiff = [e.dx-v.dx, e.dy-v.dy];
@@ -157,8 +139,11 @@ var GDW1 = Class.extend({
 
           e.dx += impulse[0];
           e.dy += impulse[1];
+          e.decaySpeed();
+          
           v.dx -= impulse[0];
           v.dy -= impulse[1];
+          v.decaySpeed();
         }
       });
 

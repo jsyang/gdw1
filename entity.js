@@ -42,7 +42,7 @@ var Entity = Class.extend({
   },
 
   decaySpeed : function() {
-    var decayRate = 0.97;
+    var decayRate = 0.91;
     this.dy *= decayRate;
     this.dx *= decayRate;
   },
@@ -76,14 +76,25 @@ var Enemy1 = Entity.extend({
   initCb : function() { 
     this.img = preloader.getFile('enemy1'); 
     this.aliveList = [
+      this.chasePlayer,
       this.moveAndBounce,
       this.decaySpeed
     ];
   },
-  w : 64,
-  h : 64,
-  r : 32,
-  r2 : 2048
+
+  chasePlayer : function() {
+    this.dx *= 0.4;
+    this.dx += game.player.x>this.x? this.speed : -this.speed;
+    
+    this.dy *= 0.4;
+    this.dy += game.player.y>this.y? this.speed : -this.speed;
+  },
+
+  speed     : 2,
+  w         : 64,
+  h         : 64,
+  r         : 32,
+  r2        : 2048
 });
 
 var Wrench = Entity.extend({
