@@ -19,8 +19,10 @@ var Entity = Class.extend({
 
   aliveList : [],
   alive : function() {
-    for(var i=0; i<this.aliveList.length; i++) {
-      this.aliveList[i].call(this);
+    if(!this.remove) {
+      for(var i=0; i<this.aliveList.length; i++) {
+        this.aliveList[i].call(this);
+      }
     }
   },
 
@@ -59,18 +61,36 @@ var Entity = Class.extend({
 });
 
 var Player = Entity.extend({
+
   initCb : function() { 
     this.img = preloader.getFile('player'); 
     this.aliveList = [
       this.moveAndBounce,
-      this.decaySpeed
+      this.decaySpeed,
+      this.removeIfDead
     ];
   },
+
+  health    : 100,
   w         : 64,
   h         : 64,
   r2        : 2048,
   r         : 32,
-  canBeHit  : true
+  canBeHit  : true,
+
+  enemiesKilled : 0,
+
+  removeIfDead : function() {
+    if(this.health<=0) this.remove = true;
+  },
+
+  takeDamage : function(damage) {
+    if(!this.remove) {
+      this.health -= damage;
+      this.decaySpeed();
+      this.decaySpeed();
+    }
+  }
 });
 
 var Enemy1 = Entity.extend({
@@ -81,8 +101,18 @@ var Enemy1 = Entity.extend({
       this.chasePlayer,
       this.moveAndBounce,
       this.decaySpeed,
-      this.removeIfDead
+      this.removeIfDead,
+      this.hitPlayer
     ];
+  },
+
+  hitPlayer : function() {
+    var near = game.xyhash.near(this);
+    if(near.length>0 && near.indexOf(game.player)!=-1) {
+      if(this.hit(game.player)) {
+        game.player.takeDamage(1);
+      }
+    }
   },
 
   gfx : function() {
@@ -96,21 +126,26 @@ var Enemy1 = Entity.extend({
   },
 
   chasePlayer : function() {
-    this.dx *= 0.99;
-    this.dy *= 0.99;
+    if(!game.player.remove) {
+      this.dx *= 0.99;
+      this.dy *= 0.99;
 
-    var vdiff = [game.player.x - this.x, game.player.y - this.y];
-    var vn    = norm(vdiff);
+      var vdiff = [game.player.x - this.x, game.player.y - this.y];
+      var vn    = norm(vdiff);
 
-    this.dx += vn[0]*this.speed;
-	   this.dy += vn[1]*this.speed;
-	
-    //this.dx += game.player.x>this.x? this.speed : -this.speed;
-    //this.dy += game.player.y>this.y? this.speed : -this.speed;
+      this.dx += vn[0]*this.speed;
+       this.dy += vn[1]*this.speed;
+    
+      //this.dx += game.player.x>this.x? this.speed : -this.speed;
+      //this.dy += game.player.y>this.y? this.speed : -this.speed;  
+    }
   },
 
   removeIfDead : function() {
-    if(this.health<=0) this.remove = true;
+    if(this.health<=0) {
+      this.remove = true;
+      game.player.enemiesKilled++;
+    }
     if(this.beingHurt>0) this.beingHurt--; 
   },
 

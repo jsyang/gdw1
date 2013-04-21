@@ -18,6 +18,8 @@ var GDW1 = Class.extend({
   enemySpawnRate      : 120,
   cyclesTillNextSpawn : 120,
 
+  gameTimer : null,
+
   init : function() {
 
     this.canvasEl         = document.getElementsByTagName('canvas')[0];
@@ -31,7 +33,7 @@ var GDW1 = Class.extend({
     this.ctx.h      = this.canvasEl.height;
     this.ctx.clear  = function(){ this.clearRect(0,0,this.w,this.h);};
 
-    this.ctx.font         = '18pt verdana';
+    this.ctx.font         = '16px verdana';
     this.ctx.textBaseline = 'top';
 
     this.initEntities();
@@ -39,7 +41,7 @@ var GDW1 = Class.extend({
     this.initXYHash();
 
     var self = this;
-    setInterval(function(){ self.loop(); }, 30);
+    this.gameTimer = setInterval(function(){self.loop();}, 30);
   },
 
   initXYHash : function() {
@@ -81,6 +83,34 @@ var GDW1 = Class.extend({
     this.ctx.clear();
     this.gameCycle();
     this.addNewEnemies();
+    this.drawPlayerStats();
+  },
+
+  over : function() {
+    // Handle game overs!
+
+    clearInterval(this.gameTimer);
+    document.onclick = function() {
+      window.location.href = window.location.href;
+    };
+  },
+
+  drawPlayerStats : function() {
+
+    var statText = [];
+
+    if(this.player.health>0) {
+      statText.push('Health: '+ this.player.health);
+      statText.push('Enemies killed: '+ this.player.enemiesKilled);
+    } else {
+      statText.push('Game over! Tap to start new game.');
+      this.over();
+    }
+
+    var self = this;
+    statText.forEach(function(v,i) {
+      self.ctx.fillText(v, 0, i*18);
+    });
   },
 
   addNewEnemies : function() {
@@ -116,7 +146,8 @@ var GDW1 = Class.extend({
       
 
       this.entities.push(new Enemy1(properties));
-      this.cyclesTillNextSpawn = this.enemySpawnRate;
+      this.cyclesTillNextSpawn = this.enemySpawnRate>>0;
+      this.enemySpawnRate-=0.1;
     }
     
   },
