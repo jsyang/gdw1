@@ -32,8 +32,18 @@ var Player = Entity.extend({
 
   alive : function() {
     if(this.dx!=null && this.dy!=null) {
-      this.x+=this.dx;
-      this.y+=this.dy;
+      var newx = this.x + this.dx;
+      var newy = this.y + this.dy;
+      if(newx<0 || newx > game.w) {
+        this.dx *= -1;
+      } else
+        this.x=newx;
+
+      if(newy<0 || newy > game.h) {
+        this.dy *= -1;
+      } else
+        this.y=newy;
+    
     }
   }
 
