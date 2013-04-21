@@ -11,6 +11,8 @@ var GDW1 = Class.extend({
     this.canvasEl         = document.getElementsByTagName('canvas')[0];
     this.canvasEl.width   = document.width;
     this.canvasEl.height  = document.height;
+    this.w                = document.width;
+    this.h                = document.height;
 
     this.ctx        = this.canvasEl.getContext('2d');
     this.ctx.w      = this.canvasEl.width;
@@ -19,32 +21,38 @@ var GDW1 = Class.extend({
 
     this.initEntities();
     var self = this;
-    setInterval(function(){ self.loop(); }, 40);
+    setInterval(function(){ self.loop(); }, 30);
   },
 
   initEntities : function() {
-    this.entities.push(new Player({ x : 20, y : 20 }));
+    var startingEntities = [
+      new Player({ x : 20, y : 20, dx : 1.2, dy : 2.3 })
+    ];
+
+    var self = this;
+    startingEntities.forEach(function(v){
+      self.entities.push(v);
+    });
   },
 
   loop : function() {
     this.ctx.clear();
-    this.drawEntities();
+    this.gameCycle();
   },
 
-  drawEntities : function() {
+  gameCycle : function() {
     for(var i=0; i<this.entities.length; i++) {
       var e = this.entities[i];
+      
+      // process entity actions
+      if(e.alive!=null) e.alive();
+      
+      // draw the damn thing
       var drawInterface = e.gfx();
-
       this.ctx.drawImage(
         drawInterface.img,
-        //0,0,
-        //drawInterface.w,
-        //drawInterface.h,
         drawInterface.x - (drawInterface.w>>1),
         drawInterface.y - (drawInterface.h>>1)
-        //drawInterface.w,
-        //drawInterface.h
       );
     }
   }
