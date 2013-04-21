@@ -1,10 +1,18 @@
+var $ = {
+  r : function(min,max) { return min + Math.random()*(max-min); }
+};
+
 var GDW1 = Class.extend({
   
   preloads : {},
 
   entities : [],
 
+  xyhash : null,
+
   classes : {},
+
+  touchSelected : null,
 
   init : function() {
 
@@ -21,14 +29,28 @@ var GDW1 = Class.extend({
 
     this.initEntities();
     this.initTouchEvents();
+    this.initXYHash();
 
     var self = this;
     setInterval(function(){ self.loop(); }, 30);
   },
 
+  initXYHash : function() {
+    this.xyhash = new XYHash({ 
+      w : this.w, 
+      h : this.h
+    });
+  },
+
   initEntities : function() {
     var startingEntities = [
-      new Player({ x : 20, y : 20, dx : 13.2, dy : 32.3 })
+      //new Player({ x : 20, y : 20, dx : 13.2, dy : 32.3 }),
+      //new Enemy1({ x : 120, y : 80, dx : -13.2, dy : 12.3 }),
+      new Enemy1({ x : $.r(0,this.w), y : $.r(0,this.h), dx : $.r(-20,20), dy : $.r(-20,20) }),
+      new Enemy1({ x : $.r(0,this.w), y : $.r(0,this.h), dx : $.r(-20,20), dy : $.r(-20,20) }),
+      new Enemy1({ x : $.r(0,this.w), y : $.r(0,this.h), dx : $.r(-20,20), dy : $.r(-20,20) }),
+      new Enemy1({ x : $.r(0,this.w), y : $.r(0,this.h), dx : $.r(-20,20), dy : $.r(-20,20) }),
+      new Enemy1({ x : $.r(0,this.w), y : $.r(0,this.h), dx : $.r(-20,20), dy : $.r(-20,20) })
     ];
 
     var self = this;
@@ -40,6 +62,10 @@ var GDW1 = Class.extend({
   initTouchEvents : function() {
     var self = this;
     addEvent(this.canvasEl, 'touchstart', function(e) { self.onTouchStart(e); });
+    addEvent(this.canvasEl, 'touchmove',  function(e) { self.onTouchMove(e); });
+    addEvent(this.canvasEl, 'touchend',   function(e) { self.onTouchEnd(e); });
+    addEvent(this.canvasEl, 'touchleave', function(e) { self.onTouchEnd(e); });
+    addEvent(this.canvasEl, 'touchcancel',function(e) { self.onTouchEnd(e); });
   },
 
   onTouchStart : function(e) {
@@ -51,12 +77,37 @@ var GDW1 = Class.extend({
         r2 : 288
       };
 
-      document.title = [userFinger.x,userFinger.y,userFinger.r2];
-
-      if(this.entities[0].hit(userFinger)) {
-        alert('hit!');
-      }
+      // hit other entities
+      var nearest = this.xyhash.near(userFinger);
+      var self    = this;
+      nearest.forEach(function(v){
+        if(v.hit(userFinger)) {
+          self.touchSelected = v;
+          return;
+        }
+      });
     }
+  },
+
+  onTouchMove : function(e) {
+    // no bounce!
+    e.preventDefault();
+
+    if(!!this.touchSelected && e.changedTouches.length) {
+      var te = e.changedTouches[0];
+      var userFinger = {
+        x : te.pageX,
+        y : te.pageY
+      };
+
+      this.touchSelected.dx = cap(userFinger.x - this.touchSelected.x,18);
+      this.touchSelected.dy = cap(userFinger.y - this.touchSelected.y,18);
+    }
+  },
+
+  onTouchEnd : function(e) {
+    log('touchend!');
+    this.touchSelected = null;
   },
 
   loop : function() {
@@ -65,11 +116,54 @@ var GDW1 = Class.extend({
   },
 
   gameCycle : function() {
+    var self = this;
+    var newEntities = [];
+    
     for(var i=0; i<this.entities.length; i++) {
       var e = this.entities[i];
       
+      // hit other entities
+      var nearest = this.xyhash.near(e);
+      nearest.forEach(function(v){
+        // Make sure we've hit the thing already
+        if(v!==e && e.hit(v)) {
+          var collideX = e.x - v.x;
+          var collideY = e.y - v.y;
+
+          var dist = Math.sqrt(e.dist(v));
+          var _dist = 1/dist;
+          var distFactor = (e.r+v.r-dist)*_dist;
+
+          var mtdx = collideX*distFactor;
+          var mtdy = collideY*distFactor;
+
+          // push-pull
+          e.x += mtdx*0.5;
+          e.y += mtdy*0.5;
+          v.x -= mtdx*0.5;
+          v.y -= mtdy*0.5;
+
+          var collisionVectorNormd = norm([collideX,collideY]);
+          // impact speed
+          var vdiff = [e.dx-v.dx, e.dy-v.dy];
+          var vn    = dot(vdiff,collisionVectorNormd);
+
+          // sphere intersecting but moving away already
+          if(vn>0) return;
+
+          // collision impulse
+          var i = 0.5 * (vn * -1.8)
+          var impulse = [collisionVectorNormd[0]*i, collisionVectorNormd[1]*i];
+
+          e.dx += impulse[0];
+          e.dy += impulse[1];
+          v.dx -= impulse[0];
+          v.dy -= impulse[1];
+        }
+      });
+
       // process entity actions
-      if(e.alive!=null) e.alive();
+      e.alive();
       
       // draw the damn thing
       var drawInterface = e.gfx();
@@ -78,7 +172,18 @@ var GDW1 = Class.extend({
         drawInterface.x - (drawInterface.w>>1),
         drawInterface.y - (drawInterface.h>>1)
       );
+
+      if(!e.remove) {
+        newEntities.push(e);
+      }
     }
+
+    // Add them back into the new XYHash
+    this.initXYHash();
+    newEntities.forEach(function(v){
+      self.xyhash.add(v);
+    });
+    this.entities = newEntities;
   }
 
 });
