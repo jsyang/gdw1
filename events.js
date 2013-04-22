@@ -78,16 +78,23 @@ var TouchEvents = {
 
     touchlength    : null,
     lastTouchPoint : null,
+    touchDX        : [],
+    touchDY        : [],
 
     touchstart : function(e) {
       var te = e.changedTouches;
       if(te.length>0) {
         te = te[0];
-        TouchEvents.throwWrenchesAround.lastTouchPoint = {
+        var namespace = TouchEvents.throwWrenchesAround;
+
+        namespace.lastTouchPoint = {
           x : te.pageX,
           y : te.pageY
         };  
-        TouchEvents.throwWrenchesAround.touchlength = 0;
+
+        namespace.touchlength = 0;
+        namespace.touchDX = [];
+        namespace.touchDY = [];
       }
     },
 
@@ -95,9 +102,11 @@ var TouchEvents = {
       // no iOS web bounce!
       e.preventDefault();
 
-      var tl = TouchEvents.throwWrenchesAround.touchlength;
-      if(tl!=null && tl<1 && e.changedTouches.length) {
-        var tp = TouchEvents.throwWrenchesAround.lastTouchPoint;
+      var namespace = TouchEvents.throwWrenchesAround;
+      var tl        = namespace.touchlength;
+
+      if(tl!=null && tl<3 && e.changedTouches.length) {
+        var tp = namespace.lastTouchPoint;
         var te = e.changedTouches[0];
         var userFinger = {
           x : te.pageX,
@@ -107,17 +116,25 @@ var TouchEvents = {
         var dx = cap(userFinger.x - tp.x, 30);
         var dy = cap(userFinger.y - tp.y, 30);
 
-        game.entities.push(new Wrench({
-          x : game.player.x,
-          y : game.player.y,
-          dx : dx,
-          dy : dy
-        }));
+        namespace.touchDX.push(dx);
+        namespace.touchDY.push(dy);
 
-        game.player.dx -= cap(dx*0.6,2.3);
-        game.player.dy -= cap(dy*0.6,2.3);
+        // Only throw the wrench after averaging
+        if(tl==2) {
 
-        TouchEvents.throwWrenchesAround.touchlength++;
+          game.entities.push(new Wrench({
+            x : game.player.x,
+            y : game.player.y,
+            dx : dx,
+            dy : dy
+          }));
+        }
+        
+        // todo : shift the touchDX, touchDY arrays
+        game.player.dx = 0.5*(game.player.dx-dx*0.6);
+        game.player.dy = 0.5*(game.player.dy-dy*0.6);
+
+        namespace.touchlength++;
       }
     },
 
